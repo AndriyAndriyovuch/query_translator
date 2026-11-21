@@ -114,6 +114,16 @@ out). A blank query returns an empty, unsure result without calling the model.
 
 If the model can't be reached, `QueryTranslator::Error` is raised: show the filter form with a short message.
 
+## Claude Code skill
+
+The repository ships a skill that walks a coding agent through the whole setup in another project:
+`skills/query-translator-setup/SKILL.md`. Copy that folder into the project's `.claude/skills/` (or into
+`~/.claude/skills/` for every project) and ask Claude to "add natural language search". Where `.claude/` is synced
+from a shared baseline and must not be edited by hand, use `~/.claude/skills/`.
+
+The skill reads its rules from the installed gem's [AGENTS.md](AGENTS.md), so they match the gem version in
+`Gemfile.lock`. The skill file itself is a copy: copy it again after updating the gem.
+
 ## Tips
 
 - Cache answers by today's date plus the normalized text: the same text on the same day gives the same filters, and

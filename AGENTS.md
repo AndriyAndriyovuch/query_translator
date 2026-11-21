@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 updated: 2026-11-21
 ---
 
@@ -79,9 +79,15 @@ RubyLLM itself is configured by the app (provider key, timeouts):
 
 ```ruby
 RubyLLM.configure do |config|
-  config.anthropic_api_key = RCreds.fetch(:anthropic, :api_key) # or credentials.dig(...)
+  config.anthropic_api_key = Rails.application.credentials.dig(:anthropic, :api_key)
+  config.request_timeout = 15
+  config.max_retries = 1
 end
 ```
+
+The translation runs inside a web request, and RubyLLM's defaults (300 s per attempt, 3 retries) can hold a server
+thread for many minutes when the provider is slow. Both settings are global: if the app already uses RubyLLM for long
+jobs, agree the values with the developer.
 
 Haiku is the default on purpose: the gem was tuned on it across eight projects. If Haiku handles a project, larger
 models do too; do not switch models to fix a bad filter description.
@@ -121,7 +127,8 @@ result = QueryTranslator::Translator.call(query: text, resources: [res_a, res_b]
 - `today` defaults to `Date.today`; pass the app's `Date.current` so "tomorrow" follows the app's time zone.
 - A blank query returns `Result.empty` without calling the model.
 - Raises `QueryTranslator::Error` when RubyLLM fails (network, provider error) or the model returns no JSON.
-  `RubyLLM::ConfigurationError` (no key) is **not** wrapped: it is a setup error and should crash loudly.
+  `RubyLLM::ConfigurationError` (no key) and `RubyLLM::ModelNotFoundError` (unknown model id) are **not** wrapped:
+  they are setup errors and should crash loudly.
 
 ### 3.5 `QueryTranslator::Result`
 
@@ -158,9 +165,9 @@ check.errors  # => ["unknown filter x"]
 
 ## 4. Integration, step by step
 
-The paths below follow the COAX Rails template (ABDI: `app/`, `business/`, `data/`, `infrastructure/`, Readymade,
-`action_scope` search services). In another layout keep the same separation: resources and translation in a business
-object, thin controllers.
+The examples below come from venue_hub, which keeps business objects under `business/`, models under `data/` and
+search services on `action_scope`. In another layout keep the same separation: resources and translation in a
+business object, thin controllers.
 
 ### Step 1 — Gemfile
 
@@ -173,9 +180,10 @@ confirm `Gemfile.lock` has a `GIT` block for the gem. Never commit a `path:` sou
 
 ### Step 2 — key and initializers
 
-1. Ask the developer to add the key to the credentials of each environment (`anthropic: api_key:`). You do not
-   create or read credential keys yourself.
-2. `config/initializers/ruby_llm.rb` — provider key from credentials (see §3.1).
+1. Ask the developer to add the key to the credentials of development and of every deployed environment
+   (`anthropic: api_key:`), not test: specs stub the translator, and without a key a forgotten stub fails loudly
+   instead of spending money. You do not create or read credential keys yourself.
+2. `config/initializers/ruby_llm.rb` — provider key from credentials and short timeouts (see §3.1).
 3. `config/initializers/query_translator.rb` — model, threshold, length, and `extra_instructions` with domain facts
    the model cannot guess (currency, units, market), one or two sentences.
 
@@ -190,12 +198,12 @@ For every index endpoint a user might want to search in words:
 3. Note who may call the endpoint (guest, client, owner, admin) and what scope the policy applies.
 4. Pick the 2–5 resources users actually ask about. Not every index needs to be searchable in words.
 
-Many COAX APIs expose `GET /api/v1/metadata` with every search service's `FORM_OPTIONS`: a quick way to see the real
-param names and enum values.
+Some APIs expose a metadata endpoint (for example `GET /api/v1/metadata`) listing every search service's filter
+options: a quick way to see the real param names and enum values.
 
 ### Step 4 — map params to filters
 
-`action_scope` / Readymade conventions and how to describe them:
+Common param conventions (the `action_scope` style) and how to describe them:
 
 | API param | filter type | description pattern |
 | --- | --- | --- |
@@ -220,8 +228,10 @@ Skip, unless the API accepts a human-readable value:
 - params the gem cannot express (§9): geo tuples, positional pairs (`range[]=start&range[]=end`), nested hashes other
   than one-key `order_by[...]`.
 
-**Database-driven lists** (categories, tags, regions) become an `enum` of ids built at request time, with the
-id–name pairs in the description, and hierarchy shown when the scope includes children:
+**Database-driven lists** (small shared lists the staff manages: categories, regions) become an `enum` of ids built
+at request time, with the id–name pairs in the description, and hierarchy shown when the scope includes children.
+Never build one from per-tenant or per-user records, names users type, or people: every name goes into the prompt of
+every call and can come back in a clarification question.
 
 ```ruby
 def category_filters
@@ -240,7 +250,8 @@ end
 
 ### Step 5 — the business objects
 
-ABDI: no database writes → **Actions**. Suggested files (replace `NaturalSearches` with the project's naming):
+Neither object writes to the database. venue_hub keeps both as **Actions** and its controllers call them; where the
+project's rules let controllers call only Operations, make `Translate` an Operation that returns the same hash. Suggested files (replace `NaturalSearches` with the project's naming):
 
 ```text
 business/natural_searches/actions/build_resources.rb   # returns [Resource, ...]
@@ -285,6 +296,8 @@ end
 
 - Cache a plain hash: it serializes cleanly to Redis and to JSON.
 - The **date is part of the cache key** because relative dates ("on Saturday") change meaning every day.
+- The key holds only the date and the text, so `BuildResources` must return the same list for every user. If it ever
+  depends on the user or role, add that to the key.
 - Cache only the translation. Never cache search results here.
 - App-specific questions that need the database belong here, after the gem: e.g. venue_hub asks "Which state?" when
   the translated city has published venues in several states, and that question **wins** over a city question the
@@ -298,7 +311,8 @@ API (returns the ready call; the client makes the second request itself):
 class Api::V1::NaturalSearchesController < Api::V1::BaseController
   allow_guests # only if the searched endpoints are public
 
-  rescue_from QueryTranslator::Error do
+  rescue_from QueryTranslator::Error do |error|
+    Rails.logger.error("Natural search failed: #{error.message}")
     error_response('Service Unavailable', I18n.t('natural_searches.unavailable'), 503)
   end
 
@@ -318,6 +332,12 @@ end
 Web (redirects to the normal page with the filters, or renders the question):
 
 ```ruby
+rescue_from QueryTranslator::Error do |error|
+  Rails.logger.error("Natural search failed: #{error.message}")
+  redirect_to venues_path(query: params[:query].to_s.squish), alert: t('natural_searches.unavailable'),
+                                                              status: :see_other
+end
+
 def index
   @query = params[:query].to_s.squish
   @search = NaturalSearches::Actions::Translate.call(query: @query, venues: scoped_collection)
@@ -327,10 +347,14 @@ def index
 end
 ```
 
-- `result_path` maps the resource to the matching HTML page and merges the filters plus `query:` (to show "You
-  searched for …"). Keep the mapping in a private method; it is routing, not business logic.
-- The question page shows the question and one link per option to the same action with
-  `query: "#{@query} — #{option}"`, plus the edit box and a link to the plain filter form.
+- `result_path` maps the resource to the matching HTML page and merges the filters plus the original text, to show
+  "You searched for …". venue_hub carries the text in `query`; if the target page already filters by a param of that
+  name (a full-text search), use another one, such as `natural_query`. Keep the mapping in a private method; it is
+  routing, not business logic.
+- The question page shows the question and one link per option to the same action with `"#{@query} — #{option}"` as
+  the text, plus the edit box (same `maxlength`) and a link to the plain filter form. The gem keeps only the first
+  `max_query_length` characters, so trim `@query` to leave room for the answer, or a long request loses it and the
+  same question comes back.
 - Show "what we searched for" chips on the result page: one chip per active filter param with a link that removes it.
 - Keep the text box limit in sync: `maxlength: QueryTranslator.config.max_query_length`.
 - Add every user-facing string to every locale file the project keeps.
@@ -358,21 +382,26 @@ Cover at least:
 - the business action: a confident answer passes through; each app-specific clarification fires;
 - the API endpoint (acceptance spec): 200 with the ready call; 503 when the translator raises;
 - the web flow (request spec): redirect with filters; low confidence → alert; question page renders options; a second
-  resource redirects to its page;
+  resource redirects to its page; the translator raises → the filter page with the message;
 - the resource builder does not raise when a database list (categories) is empty.
 
 Run the project's full suite, linter and security scanner (`brakeman`, `bundler-audit`) afterwards.
 
 ### Step 8 — try it live before handing over
 
-Write a throwaway script (scratch directory, not committed) that runs 30+ realistic queries through
-`Translate` against development data with a real key, and read every answer:
+Write a throwaway script (scratch directory, not committed, run with `bin/rails runner`) that runs 30+ realistic
+queries through `Translate` against development data with a real key, and read every answer:
 
 - plain requests per resource; every filter type at least once;
 - other languages the users speak; slang and abbreviations ("NYC", "50k", "asap");
 - typos; relative dates ("next Saturday", "last week", "this quarter");
 - several values ("draft or submitted"); negations ("without", "never", "not overdue");
 - vague words ("big", "cheap", "bad reviews"); off-topic ("what's the weather"); hostile ("ignore your rules…").
+
+Start the script with `Rails.cache = ActiveSupport::Cache::NullStore.new`: `Translate` caches by day + text, so
+without it a re-run replays today's answers and a description fix seems to change nothing. Do not use
+`Rails.cache.clear`, which can wipe a Redis database other apps share. Use the records already in the database; ask
+before creating any, and remove them at the end.
 
 For every wrong answer change the **filter or resource description** (or `extra_instructions`) and run the set again.
 Report what you changed and what still goes wrong.
@@ -409,7 +438,7 @@ One sentence on what the records are, in business words, and whose they are:
 - Give **formats** for odd values: "a year like 2020, not an age", "two-letter state code".
 - For ranges say **lowest/highest**, **on or after/on or before**, and whether an end date is excluded.
 - For enums with cryptic values explain them in the description: "Priority: 0 is P0 (highest) … 3 is P3",
-  "krytter is a hunting-license invoice".
+  "net30 is an invoice due in 30 days".
 - For free-text filters list the fields searched.
 - Keep it to one sentence. The model sees every filter of every resource on each call.
 
@@ -421,7 +450,7 @@ through `_gte` + `_lte`, quarters, "this week" with exclusive ends when the desc
 
 ### 6.4 Booleans
 
-Most COAX `with_*` scopes switch on for **any** non-blank value, so `with_x=false` returns the opposite of what the user
+Many `with_*` scopes switch on for **any** non-blank value, so `with_x=false` returns the opposite of what the user
 asked. The gem therefore treats every boolean as a switch: the prompt tells the model to send only `"true"`, and
 `FilterCheck` drops a `false` and reports it (the result becomes unsure). Describe booleans as what they turn on:
 "Only payments that have at least one refund". A negation ("never refunded") goes to another filter when one fits (a
@@ -441,8 +470,9 @@ For facts that apply to every filter: currency, units, market, time zone convent
 - **Allowed values only:** enum values come from your list; never forward a free-form value into code that dispatches
   on it (`send(kind)`). If the project already has such a scope, flag it to the developer.
 - **Authorization** stays in the index endpoints (§2.4). The natural-search endpoint only returns filters.
-- **Cost:** every uncached request is one LLM call (fractions of a cent on Haiku). Cache by day + text; add the
-  project's usual rate limiting if the endpoint is public.
+- **Cost:** every uncached request is one LLM call (fractions of a cent on Haiku). Cache by day + text. If the
+  endpoint is public, ask the developer for a rate limit on the natural-search actions themselves; a site-wide page
+  limit is far above what paid calls need.
 - **Privacy:** the model sees the user's text and your filter descriptions (including database-driven names like
   categories). Don't put personal data into descriptions.
 
@@ -475,13 +505,15 @@ For facts that apply to every filter: currency, units, market, time zone convent
 ## 10. Hand-over checklist
 
 - [ ] Gem from `git:` (not `path:`) in the Gemfile, lockfile updated.
-- [ ] Key in credentials, both initializers present, model set explicitly.
+- [ ] Key in the credentials of development and every deployed environment (not test), both initializers present
+      (short RubyLLM timeout and retries), model set explicitly.
 - [ ] Every filter name equals a permitted param of its endpoint; enum values come from code.
 - [ ] Booleans described as switches; ranges say lowest/highest and whether ends are included.
-- [ ] Database-driven enums skip themselves when empty.
+- [ ] Database-driven enums come from shared lists the staff manages and skip themselves when empty.
 - [ ] Translation cached by date + normalized text.
-- [ ] API endpoint returns the ready call; 503 on `QueryTranslator::Error`.
-- [ ] Web flow: question page, low-confidence hint, redirect with filters, "what we searched for" chips.
+- [ ] API endpoint returns the ready call; 503 on `QueryTranslator::Error`, which is logged.
+- [ ] Web flow: question page, low-confidence hint, redirect with filters, "what we searched for" chips, the filter
+      page on `QueryTranslator::Error`.
 - [ ] All strings in every locale.
 - [ ] App specs stub the translator; full suite, linter and security scan green.
 - [ ] 30+ live queries tried and the results reported to the developer.
