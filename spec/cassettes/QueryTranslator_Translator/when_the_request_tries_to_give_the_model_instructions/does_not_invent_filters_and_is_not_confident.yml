@@ -16,17 +16,27 @@ http_interactions:
         (enum): Kind of place Values: hall, studio, loft.\nbookings: The signed-in
         client''s own bookings\n  - by_status (enum): Booking status Values: pending,
         paid, cancelled.\n\nRules:\n- Pick the one resource that fits the request
-        and use only its filters.\n- The request may be in any language: map its words
-        to the filters exactly as you would map English ones.\n- Write every value
-        as a string: integers like \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  booleans
-        as \"true\" or \"false\", enum values exactly as listed.\n- Put into \"unmapped\",
-        in the user''s words, only the requirements that no filter can express and
-        that would\n  change which results fit, such as \"with a sea view\". Leave
-        out the purpose of the event (a wedding, a birthday,\n  a party), opinions
-        and filler words (\"cool\", \"chill\", \"nothing fancy\") and words a filter
+        and use only its filters.\n- Use a filter only when it means exactly what
+        the request asks. Never use a similar filter as a stand-in,\n  such as a creation
+        date for a closing date: put that part into \"unmapped\" instead.\n- For a
+        filter that allows several values, repeat it once per value.\n- For a text
+        filter, use only the key words that must appear in the text (a name, a street,
+        a word like\n  \"late\"), not a whole phrase from the request. The words you
+        leave out do not go into \"unmapped\".\n- A question that the results of a
+        resource could answer (\"how do I ...\") is a search: search its key words.\n-
+        The request may be in any language: map its words to the filters exactly as
+        you would map English ones.\n- Write every value as a string: integers like
+        \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  datetimes as YYYY-MM-DDThh:mm:ssZ,
+        booleans as \"true\" or \"false\", enum values exactly as listed.\n- Put into
+        \"unmapped\", in the user''s words, only the requirements that no filter can
+        express and that would\n  change which results fit, such as \"with a sea view\".
+        Leave out the purpose of the event (a wedding, a birthday,\n  a party), opinions
+        and filler words (\"cool\", \"lit\", \"nothing fancy\"), general or slang
+        words for the thing\n  searched (\"a spot\", \"a place\") and words a filter
         already covers.\n- Ask a question instead of guessing when a word is vague
         about a number (\"big\", \"cheap\"), when a date\n  could mean more than one
-        day (\"on the weekend\"), or when it is unclear which resource the user means.\n  Give
+        day (\"on the weekend\"), when it is unclear which resource the user means,
+        or when\n  the request lists several values for a filter that takes only one.\n  Give
         2 to 4 short options and write the question and the options in the language
         of the request.\n  Otherwise leave \"question\" and \"options\" empty.\n-
         Set \"confidence\" from 0 to 1: how sure you are that the filters express
@@ -54,9 +64,7 @@ http_interactions:
       - application/json
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-haiku-5-5","id":"msg_011ChG9kpR3f5MX7Mxe4sGuG","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSyQsKEAgUGAI4AUIIdGhpbmtpbmcSDCJZA2dwjLv6x8AWPxoMTkxUleA9c2fRQ9qjIjBuzEUVmbV/4UnqvthbQL9JQmdPRINkaFGjk6DQYRWv6yOxmYDX/QLADXi7IeXCrJIq5goJSp24VaJTI54v8nomlwIRDfV88CdsdDszBr7T3WF8NPgN4sm2LK1DhpJg5WLOtbNmgAcBTqGCicp4Bw188QjN0bpNja1m7Uucjurr+xq5LCriJ1y83WwrYwXfscng1USOSjfRKvEcodF466ZH4CSh90mCuTTaoHv8Pgxwiu9zJeqgA+GAa4W5IgGL/MavO1R/C8lsLMr0rs6Qpx74EOmPP6dAiehOuPDvmsPXS/mvl+QuqQtZ8efxJYUoESZwB4UMVbhQLzmE4/haJ4bBsXrCUUxVT7RfE3blTpRrtZTHOqlbj0ZuOt8OKltrE8OC+uO1vh2kkrtD4X/ZuTz9GHCou9WIQ4XYFks5QVKM0AJDrZWHQfEVKmPX5z8cIWuJXHTZvwMS+dD09rQebsSD2pmmpOBWy9lKWg5m5xYOPKBpZ1KAcQX4G3Xyq/eSdN880cerYBpi2Qm1BNT9cTiv7XyinZjAGfwjaKQ+0B8EPTIDqiLk9oO0vTD61mSc8FkHrPJL+5cE4QqOwrk2P1OhE+6Rp2aY+dtv0RJ1I4jCoGSxzwNiaC+lllhD7hp7Rexm0MTxc7rzgxcO9F+mO+NwyA/aApAee4aXBK/vrQDxw3bD1n9G8QY/2HAWdu0VoBrifvQTN3hP31uW3pcbZIud4rj+ZY5aydzr7C53JgCwOuXyqObilRAjCbjn9NnCDF3dRYDOYi9oH/gK3yuVdohPtY4IN9qtzGcyoIETUOb2f7ESsQdBQYcwLT2UIKNQ6Gmy2hR/QfrCoyU98jc4oPrZWxAB4a7tGDFDcguT23EGHdyUJpLKPL83VUSdLfobrxL5+vnPsDZT/6l/Yf8MFz1NQx6NPWKXixjsqqigGr+N6e7NmVDpE3ReS300+k2FmTn9PdD57Jl9CHm2ooNj/ZOViwZ4YZPGxztVTGSq8mVcFfnrRvvdD/2ul4ifEGUJXf91YOY2y2R5JBF/Lz34ivH7SB93bTACxKA6/nkr+k4uHChOALM83o0q5FfM9bGgwHVh2ruhS3AjIibtin8ALm023W4475jjzFUBDKdIp6ppe/ci5gKsRX5uTHalctxxbSu2tue6km1dU/UN8a9xdhChOj1RXAk/eUW2YbUev5kDF3KXedlqP60wIbFgCSqSIVG/frExGGBfTpHE9z3z1eY5l8UYV0NOJA1AwV2hOX54DPopIgrSL2gPGHdyCcnSR9p1A32goq4AqprGOAgNbgKXfVJzDqws17y548JhLDFqOjtbg7ZS0eR578oxjKsX9GOQ2yImXYDjMuJBMigpw/p02GUGsvV7PSbsW09VxkRWLfDbzBSkYwuqtQmJFYB9+798jwg9SMo9ZQ1Ku1ffNne7OymjWvioc7SDSmQfl1KaYHFoIfiUVNsjzSPW0NEKf6Osdz2lnIYU8Z0VanYSEm3f+7ZtmbuGWC85ESvvxVRJ5zA0SoZARr5VnNvhpsCp00Gzncp1pg7ODxzUzpPU/JvVWAoB/XtYM1hQkj8Hz9/LRAN7bwCeHxgNah77Jevopnlb/TEyucwf+lgg3gSK7Xbq7auUl+yO80AeZE7WQ58FDrRXxNfnkdbkPQSy88tkDojJGGPzyzAJcwH16GJyUpcfELAcq7yK/JGvWkq85alWJCUOrLmgC2yqODf1LKqf39LwZ2phNxf4ZYd2Jq4HI3EiDIqsLgWWKqmFj4E6LKoKCzTIWx3xqaFsyzPyQsvqmzr3rp2BiR7MQjPG6zBnnDN6Cgm3nXYFjitTyXSxW0hjdh9WwvAjx+OA0cDflfzRANXk1EzCfOo687+MHhLKmzOq2D9Hag3Zv9YgJDiV5Bn9xonkRhpov061HBgB"},{"type":"text","text":"{\"resource\":\"bookings\",\"filters\":[],\"confidence\":0.2,\"unmapped\":[\"return
-        the bookings of every user\"],\"question\":\"Bookings are only available for
-        your own account. Which would you like?\",\"options\":[\"Show my own bookings\",\"Show
-        my paid bookings\",\"Search venues instead\"]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1167,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":374,"output_tokens_details":{"thinking_tokens":279},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
-  recorded_at: Sat, 21 Nov 2026 13:28:06 GMT
+      string: '{"model":"claude-haiku-5-5","id":"msg_011ChGB6AEJRjtC6NQdKphqU","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"{\"resource\":\"bookings\",\"filters\":[],\"confidence\":0.2,\"unmapped\":[\"return
+        the bookings of every user\"],\"question\":\"\",\"options\":[]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1412,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":351,"output_tokens_details":{"thinking_tokens":298},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
+  recorded_at: Sat, 21 Nov 2026 13:45:35 GMT
 recorded_with: VCR 6.4.1

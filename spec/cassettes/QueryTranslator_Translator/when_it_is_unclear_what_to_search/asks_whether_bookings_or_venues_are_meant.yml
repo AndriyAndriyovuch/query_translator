@@ -16,17 +16,27 @@ http_interactions:
         (enum): Kind of place Values: hall, studio, loft.\nbookings: The signed-in
         client''s own bookings\n  - by_status (enum): Booking status Values: pending,
         paid, cancelled.\n\nRules:\n- Pick the one resource that fits the request
-        and use only its filters.\n- The request may be in any language: map its words
-        to the filters exactly as you would map English ones.\n- Write every value
-        as a string: integers like \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  booleans
-        as \"true\" or \"false\", enum values exactly as listed.\n- Put into \"unmapped\",
-        in the user''s words, only the requirements that no filter can express and
-        that would\n  change which results fit, such as \"with a sea view\". Leave
-        out the purpose of the event (a wedding, a birthday,\n  a party), opinions
-        and filler words (\"cool\", \"chill\", \"nothing fancy\") and words a filter
+        and use only its filters.\n- Use a filter only when it means exactly what
+        the request asks. Never use a similar filter as a stand-in,\n  such as a creation
+        date for a closing date: put that part into \"unmapped\" instead.\n- For a
+        filter that allows several values, repeat it once per value.\n- For a text
+        filter, use only the key words that must appear in the text (a name, a street,
+        a word like\n  \"late\"), not a whole phrase from the request. The words you
+        leave out do not go into \"unmapped\".\n- A question that the results of a
+        resource could answer (\"how do I ...\") is a search: search its key words.\n-
+        The request may be in any language: map its words to the filters exactly as
+        you would map English ones.\n- Write every value as a string: integers like
+        \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  datetimes as YYYY-MM-DDThh:mm:ssZ,
+        booleans as \"true\" or \"false\", enum values exactly as listed.\n- Put into
+        \"unmapped\", in the user''s words, only the requirements that no filter can
+        express and that would\n  change which results fit, such as \"with a sea view\".
+        Leave out the purpose of the event (a wedding, a birthday,\n  a party), opinions
+        and filler words (\"cool\", \"lit\", \"nothing fancy\"), general or slang
+        words for the thing\n  searched (\"a spot\", \"a place\") and words a filter
         already covers.\n- Ask a question instead of guessing when a word is vague
         about a number (\"big\", \"cheap\"), when a date\n  could mean more than one
-        day (\"on the weekend\"), or when it is unclear which resource the user means.\n  Give
+        day (\"on the weekend\"), when it is unclear which resource the user means,
+        or when\n  the request lists several values for a filter that takes only one.\n  Give
         2 to 4 short options and write the question and the options in the language
         of the request.\n  Otherwise leave \"question\" and \"options\" empty.\n-
         Set \"confidence\" from 0 to 1: how sure you are that the filters express
@@ -54,9 +64,9 @@ http_interactions:
       - application/json
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-haiku-5-5","id":"msg_011ChG9kRDHTDFedtseBEP42","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSugkKEAgUGAI4AUIIdGhpbmtpbmcSDLimiXQBW5r4S2dTbxoM6I+jIbAsh5ESRQ/bIjDiktMVkT0BoLGtdztav2oyMO3oUJwvRoCns/CjTGtS+M80pOUgR+dTTvngOUAhnb0q1wg1I7hhX/P6O8QPe1Y6VpVsqhFnSCfo4b88UcqfzohO5Zz1BsbAlSurWZuF9QmcGye2+zHx6gav84HcvdnJDgU30DusGDx18LMZOqEjxpTb/mikRMhJM+Sn5PEPKVTZ24x57Cs0dsuvg9YY8x5QhxzZL9IXzm9BKsrLhd5q6BOGo1VNEfdyyoFBwOA+5Fh50juwCNDcUjQsc7M+5U+Bg1zPd/MAtZciTUUAxVIrqwQH8qD7kohvqlaADRxXnTYmQRof+taL87iYyfMQlqjKLrflOWMxQ2PWxjFSxhkcmjJNn0vSJv1edQiLCwC825VcJmFPcBxr+JTCdexw0+h3o9i1yCfGF6P0AGf9Mmw4/HPQOgNjdD/SJQxmFTseExRggjGJT9m/B7N/onv/C7t03d6aNLsx/mLSXMSrY8caHYOmU3+jexYenVeDaEvHWjtFgzwmiBt2UyMcRf2WiyU1VyQ5BSxiht/QBNwZCOj9DLCohZZIlzFK7+7cFOM0hzxjC+qFOWmPtuJl6UoBjMLRINJhUFQ4WHumY3JpUJApHPVGZEbPQBCcUqetDKBvCtd+2yyYtKGqnJkaa12de4RpP76TEBYPr1ONIGf66RLBhcTZyR5VdSvKh5yKMR8NSrZvtOUaoqI2ryyMKpJIT6gFY/5ZDSVkYWQGhsl+HuJxVOEoIs4PUCGdF7AOmF9IUpLRYGn4qQQKEqsnzFqykr+ru1HAH4ajHWLNswYIw3IPqyVWUJv8U4C/GvXjDyenuMzIsNq+ktx3Vr1UOu6RZRbXMMrz/1Kw4SP7f++j7Sf+Tlvy4kNuI6A5L1BGRJ9oRpxnmZ3GEF1X4eFd8VMxEqWBmBnRZ5zQ4qKMmwW3AZ51U/k+p9eChqw2BrQikEAoV11twcnlCHW/M9lyt8xjsWbBI1NAKrZt3Tw+zu4DjMDIy1JLLL7xFlpMlP79vi4cOHjXqgjw24V57Cm8kIQyLVTsQaP5Xu7BeGXsuPeT92aCPJNwO+IYEXUVwuFSQ2/yIGqylQlFFlsSYySdt410S8XeVBOjmPOP5DbQE+Rn0GVWWVpu2scTX+7ktyn9P85c0e+v2ORKLLVm073QErlVvzij7fBDuK6W2jY/CbtACqB9wzKKA9vcUi/4q6rtbZegsCJEWFQqVICqPx1zXqIv1Jl9Z3dp+jheAvvv5qc92oFAXRyAjkvJSYtRz9bkn+fgt1Mhls7BoeX4ZOqYU/woEdbPKw0U2CpyQQp7POpZmZtXugpQDOec4lMY4/sSdZk3qMXvBvQkbHe/VEupfzVaoZs6XD/PbZdCGQMwU7/HoWYICCb4YJixurr1kbuotkcsLCXoDLZxKH/91xEww67uJSBe+nLgWtyCD5TaGWhu/dAj6NOO9cVxgMVAu7IrwvE6kqb+5jxF9idDZklCvPO4Sc9pKfLYxFfvskYgCZ5EdDWg2HRbcvBApdShwHLTP7jKl6fq0WLGpZaeKvy4GAE="},{"type":"text","text":"{\"resource\":\"venues\",\"filters\":[],\"confidence\":0.2,\"unmapped\":[],\"question\":\"Do
-        you want venues, or your own bookings, and for which part of December?\",\"options\":[\"Venues
-        free on a specific December date\",\"Venues available any time in December
-        2026\",\"My bookings in December 2026\"]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1156,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":294,"output_tokens_details":{"thinking_tokens":197},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
-  recorded_at: Sat, 21 Nov 2026 13:28:00 GMT
+      string: '{"model":"claude-haiku-5-5","id":"msg_011ChGB5kACu9xnt8a8jdPor","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSwAoKEAgUGAI4AUIIdGhpbmtpbmcSDOg91UrP8xk7NPltcBoMHEW1HObsz6NiEu6sIjBuWO40TJYl+HzCacjMTLyKYQrkiZb2GKvCbd5VjKTfksLkExYpqV10doIbPPRfxMcq3QmMGs68SNMS2q2K/oghrX2mBWIvQXulmF4k3YJ50MkPc4SrfIpQs8qWrrTHmtjcwq7YD29djISF6yfzt1ABpsLp6HwUizE77VJF3BTzXoHGGchcIQ3H7pKKXUpq4h+Ds50YohgdCIbAMZ7ekYC5FN1cezKmpmwmSaZ9Toh7Wo3Y7oBd5PQxXRWHFGg0r1P3pS4qz2Vj2hxMZb1T6Aguv8XkVSC8jgw3TmGtRNXQ4bmVwPmI1SEi40cXIg63ewRr7R6gjeYs2iKmoZ5jg44VtPYgg2HNxdTSwm6W5svY+KjLBchuPkfqvXE/EWBno6EhgpBofZn5Z8eysi8w5kciM0lrLG8Puzu0I06Ghx7bzMduVq0PMihWO4PzPPaG7iN2vkEdk7x4Upc1nUg8GrcaoPyTuQEbQH5dSTjjkMIVSg4y2T6Hmx5cFFltX6t0GSgWdd4Rf7dikG3FGWdbX1Rm34clRo9Dr/K6giJczT8a2NzH14UCD4fRD3hKo7HTdRudQqlPqA9xB4iPTECOynaek8TY97VjQiBrTyX5uEYS2MpT2gtrHty4BVcS8k6ihJbImi+EYvALe0O+GUVaYVY6N6ZXr0GuH1Yg+539XIUYcuLZWco5sfw1mTl6hEop8L1q9gXdKsdsHPGh/9pObN35sYkSwPRZ69Bo5QBxT5Rp0cvv+N7opNI6EuzHMxgH1W/RBbO2O8IsG2mayBn0TInh5P4L5fzLHtZOAMGKOUiqqFvLMkfs7XEyEmr4IDVfxEPMmagEyLosvpGfwd0GrkpXp7BAOBYSY9F413capY/DBbcZCaxYbTmj6YJhVmgkxk27BYCSP7uYWTVBHBsmAoFvj2Guud84UzAbmgRw1WDPtlUyaDJxWc+SSIuBIUWO0ijVtZ5nTjPdV5L8iEEektofWHqHDwIxeIxKreVMFAUi17Qi8N200NMnxSDXvvdESB9k3nra/H5xTr7GgxD4ejRuonu53yCelPc5SwsuG3D0BzJjFv8vBWXWhFV8X8xsrPfWC86ckt7cR2D8bSEoDJULJ4BTetsjwbuwawmNxmBwKzyVPtNTPMS1aIJxLNhBsooKOurqxmW4l5Yvysl5wSGOiu6QM3IhSzcQgJcVBY9K/xHCKBpOqmmxzq+EO6sDGbwK2bNGUYbgPey51ldWTCW8G1DnGDH2xtHL2JwjYruuxLjDlPHFO3D6Iqo7im/pG56bNHI8Q1WIqj66a2tGsdfLBNgApVRvaML9QcFanYgvwy/jJ7MBEnNrzca1TlMYt5Rwco7wxOj/gjkX1P7oVw6RuwRYGDg02JA9HHmslzQOvaCueosWBl7IP4GFyCe6vxjdITtHRckuyrbss6ABrvfJLbDI8GxO6+DwY/Jmwpytx78XZKqL00CE1Ot8gszf/xpByzn0g86RFPOqyU9xSnw3HjwsuNTh0ACjiz8F6+sdg9Z4g6+xMq0xFuUZKtjR95ckHQwd2NEvMbY75B2OG2Sj18mYwwDX1oyMViXrugC/HcP/Ut/qOUNXdCy5FCxzSCaPydiZsziObj6scCLTvLXfFAZwUxP0x9Kf3zJd+h+jzu6Pt5QItUcufsNWMjueR11ijGAYcGCbEMajSOyCOAtyQnZWV0/YsLN5AKitAgYA2/ItXhnAXEQuKZqNpOgNeCkYAQ=="},{"type":"text","text":"{\"resource\":\"venues\",\"filters\":[],\"confidence\":0.2,\"unmapped\":[],\"question\":\"Which
+        search do you mean, and for which date in December?\",\"options\":[\"Venues
+        available on a specific December date\",\"Your bookings in December\",\"Venues
+        available on any date in December\"]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1401,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":319,"output_tokens_details":{"thinking_tokens":232},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
+  recorded_at: Sat, 21 Nov 2026 13:45:29 GMT
 recorded_with: VCR 6.4.1

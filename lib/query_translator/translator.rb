@@ -48,6 +48,7 @@ class QueryTranslator::Translator
   end
 
   def answered_filters
-    answer["filters"].to_a.to_h { |filter| [filter["name"], filter["value"]] }
+    answer["filters"].to_a.group_by { |filter| filter["name"] }
+                     .transform_values { |filters| filters.map { |filter| filter["value"] } }
   end
 end

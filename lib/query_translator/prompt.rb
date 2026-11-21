@@ -22,14 +22,22 @@ class QueryTranslator::Prompt
 
       Rules:
       - Pick the one resource that fits the request and use only its filters.
+      - Use a filter only when it means exactly what the request asks. Never use a similar filter as a stand-in,
+        such as a creation date for a closing date: put that part into "unmapped" instead.
+      - For a filter that allows several values, repeat it once per value.
+      - For a text filter, use only the key words that must appear in the text (a name, a street, a word like
+        "late"), not a whole phrase from the request. The words you leave out do not go into "unmapped".
+      - A question that the results of a resource could answer ("how do I ...") is a search: search its key words.
       - The request may be in any language: map its words to the filters exactly as you would map English ones.
       - Write every value as a string: integers like "50", decimals like "299.99", dates as YYYY-MM-DD,
-        booleans as "true" or "false", enum values exactly as listed.
+        datetimes as YYYY-MM-DDThh:mm:ssZ, booleans as "true" or "false", enum values exactly as listed.
       - Put into "unmapped", in the user's words, only the requirements that no filter can express and that would
         change which results fit, such as "with a sea view". Leave out the purpose of the event (a wedding, a birthday,
-        a party), opinions and filler words ("cool", "chill", "nothing fancy") and words a filter already covers.
+        a party), opinions and filler words ("cool", "lit", "nothing fancy"), general or slang words for the thing
+        searched ("a spot", "a place") and words a filter already covers.
       - Ask a question instead of guessing when a word is vague about a number ("big", "cheap"), when a date
-        could mean more than one day ("on the weekend"), or when it is unclear which resource the user means.
+        could mean more than one day ("on the weekend"), when it is unclear which resource the user means, or when
+        the request lists several values for a filter that takes only one.
         Give 2 to 4 short options and write the question and the options in the language of the request.
         Otherwise leave "question" and "options" empty.
       - Set "confidence" from 0 to 1: how sure you are that the filters express the whole request.
@@ -88,6 +96,7 @@ class QueryTranslator::Prompt
 
   def filter_text(filter)
     text = "#{filter.name} (#{filter.type}): #{filter.description}"
-    filter.values ? "#{text} Values: #{filter.values.join(", ")}." : text
+    text = "#{text} Values: #{filter.values.join(", ")}." if filter.values
+    filter.multiple ? "#{text} Several values allowed." : text
   end
 end

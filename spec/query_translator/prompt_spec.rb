@@ -13,6 +13,16 @@ RSpec.describe QueryTranslator::Prompt do
     end
   end
 
+  describe "#instructions with a filter that allows several values" do
+    subject(:prompt) { described_class.new(resources: [bookings], today: Date.new(2026, 11, 21)) }
+
+    let(:bookings) { bookings_resource.with(filters: [bookings_resource.filters.first.with(multiple: true)]) }
+
+    it "says so next to the filter" do
+      expect(prompt.instructions).to include("Values: pending, paid, cancelled. Several values allowed.")
+    end
+  end
+
   describe "#instructions with the app's own rules" do
     it "adds them after the gem's rules" do
       allow(QueryTranslator.config).to receive(:extra_instructions).and_return("Prices are per time slot.")

@@ -12,7 +12,10 @@ RSpec.describe QueryTranslator::FilterCheck do
         QueryTranslator::Filter.new(name: "max_price", type: "decimal", description: "Highest hourly price"),
         QueryTranslator::Filter.new(name: "available_on", type: "date", description: "Date with a free slot"),
         QueryTranslator::Filter.new(name: "with_parking", type: "boolean", description: "Has parking"),
-        QueryTranslator::Filter.new(name: "by_state", type: "enum", description: "State", values: %w[IL NY])
+        QueryTranslator::Filter.new(name: "by_state", type: "enum", description: "State", values: %w[IL NY]),
+        QueryTranslator::Filter.new(name: "by_status", type: "enum", description: "Status", values: %w[draft paid],
+                                    multiple: true),
+        QueryTranslator::Filter.new(name: "by_created_at_gte", type: "datetime", description: "Created since")
       ]
     )
   end
@@ -29,6 +32,24 @@ RSpec.describe QueryTranslator::FilterCheck do
                    "available_on" => Date.new(2026, 11, 28), "with_parking" => true, "by_state" => "IL" },
         errors: []
       )
+    end
+  end
+
+  context "when a filter allows several values and a datetime is given" do
+    let(:filters) { { "by_status" => %w[draft paid draft], "by_created_at_gte" => "2026-11-01T00:00:00Z" } }
+
+    it "keeps every distinct value and the parsed time" do
+      expect(result).to have_attributes(
+        filters: { "by_status" => %w[draft paid], "by_created_at_gte" => Time.utc(2026, 11, 1) }, errors: []
+      )
+    end
+  end
+
+  context "when a filter that takes one value gets several" do
+    let(:filters) { { "by_state" => %w[IL NY] } }
+
+    it "keeps none of them and reports it" do
+      expect(result).to have_attributes(filters: {}, errors: [a_string_including("by_state takes one value")])
     end
   end
 

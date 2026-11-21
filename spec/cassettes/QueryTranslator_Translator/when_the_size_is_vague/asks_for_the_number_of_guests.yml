@@ -16,17 +16,27 @@ http_interactions:
         (enum): Kind of place Values: hall, studio, loft.\nbookings: The signed-in
         client''s own bookings\n  - by_status (enum): Booking status Values: pending,
         paid, cancelled.\n\nRules:\n- Pick the one resource that fits the request
-        and use only its filters.\n- The request may be in any language: map its words
-        to the filters exactly as you would map English ones.\n- Write every value
-        as a string: integers like \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  booleans
-        as \"true\" or \"false\", enum values exactly as listed.\n- Put into \"unmapped\",
-        in the user''s words, only the requirements that no filter can express and
-        that would\n  change which results fit, such as \"with a sea view\". Leave
-        out the purpose of the event (a wedding, a birthday,\n  a party), opinions
-        and filler words (\"cool\", \"chill\", \"nothing fancy\") and words a filter
+        and use only its filters.\n- Use a filter only when it means exactly what
+        the request asks. Never use a similar filter as a stand-in,\n  such as a creation
+        date for a closing date: put that part into \"unmapped\" instead.\n- For a
+        filter that allows several values, repeat it once per value.\n- For a text
+        filter, use only the key words that must appear in the text (a name, a street,
+        a word like\n  \"late\"), not a whole phrase from the request. The words you
+        leave out do not go into \"unmapped\".\n- A question that the results of a
+        resource could answer (\"how do I ...\") is a search: search its key words.\n-
+        The request may be in any language: map its words to the filters exactly as
+        you would map English ones.\n- Write every value as a string: integers like
+        \"50\", decimals like \"299.99\", dates as YYYY-MM-DD,\n  datetimes as YYYY-MM-DDThh:mm:ssZ,
+        booleans as \"true\" or \"false\", enum values exactly as listed.\n- Put into
+        \"unmapped\", in the user''s words, only the requirements that no filter can
+        express and that would\n  change which results fit, such as \"with a sea view\".
+        Leave out the purpose of the event (a wedding, a birthday,\n  a party), opinions
+        and filler words (\"cool\", \"lit\", \"nothing fancy\"), general or slang
+        words for the thing\n  searched (\"a spot\", \"a place\") and words a filter
         already covers.\n- Ask a question instead of guessing when a word is vague
         about a number (\"big\", \"cheap\"), when a date\n  could mean more than one
-        day (\"on the weekend\"), or when it is unclear which resource the user means.\n  Give
+        day (\"on the weekend\"), when it is unclear which resource the user means,
+        or when\n  the request lists several values for a filter that takes only one.\n  Give
         2 to 4 short options and write the question and the options in the language
         of the request.\n  Otherwise leave \"question\" and \"options\" empty.\n-
         Set \"confidence\" from 0 to 1: how sure you are that the filters express
@@ -54,8 +64,8 @@ http_interactions:
       - application/json
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-haiku-5-5","id":"msg_011ChG9k7ebjk3mruzfEsUiF","type":"message","role":"assistant","content":[{"type":"text","text":"{\"resource\":\"venues\",\"filters\":[{\"name\":\"by_city_match\",\"value\":\"Chicago\"},{\"name\":\"by_category\",\"value\":\"hall\"}],\"confidence\":0.5,\"unmapped\":[],\"question\":\"How
-        many guests should the hall fit?\",\"options\":[\"Up to 50 guests\",\"50 to
-        150 guests\",\"More than 150 guests\"]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1161,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":116,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
-  recorded_at: Sat, 21 Nov 2026 13:27:55 GMT
+      string: '{"model":"claude-haiku-5-5","id":"msg_011ChGB5L5rrCRke9Fjd8dJ7","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQS1QgKEAgUGAI4AUIIdGhpbmtpbmcSDEMEwwFzOzJsvcxNLxoMdUPELsuKcw+Cgu5yIjAbCuie/v9lQrEAH7lupxiQ+LKN7WlVOe+QbJZ8R20/9U4JyekGbnsqtJDjUmHGV9Uq8gcgq66sgqpH6HkraPUy+UR5xHuA0Fy/4VgW3BG6upunNkY6E2PDfIPA1Ss4jKa3y/gtsQKlDkI25umkS/j8Ng1i+5/CZ1xRzM0nNRMRj14mhV+qzlmarQVWk0ACKweKa3eoXITTCAAgoIqD+JpMy9wqtTH7j30xwYoU+3iHFVtwzIz1Nn24D6JAncut0zsiFiLrhV8zIDElESW9je7p+ZnuhZMDJ+epyK+90Ytpa7RgzVJCWWsZnUF+pu1Ip3J8bcIdbFAsnAFIwh8fFySZJQDBUqQP9rnX3b4VhYaXeIQHhJmhw2sTme5Sytk2vvxMrMjGULD0gvIMVS8Eg7/mFO1nwqX1yWgwSYXoa9PXlBo06fIRJzn8k4wotylhDxZOW2ksrzjVqgqWAIG3hhHCT94PO6bzX2puL/AXAXiCNh6WJeDu3RQo/bobpzdUGj/V3XSPGhxhrYtEtF+4VcdlW0QIhWZOS31pL3sxYBSdwjZjyGDE1jMQnuz9SEWl7GffeT8jUJ4Z3m7pOnx/8csX0Wt6WtjaM/m7pehYdongdeuZX09y5HRhwUkrpksbz8LJ/0go0mQn9Ss3QhV7+Zo/pNFQuYRRhxFOmKr3CV/QCehxatJXsTcf0sXmilrmWb/Hw5VXCtFhAuKJsY0ztIei+fTAVHsPJo6lcw2ClhKCNo+rXoZN4r9n4Hb9yb8MPN9+5BTWY/57SAKtaNH2eRYw2GY95FGfDKFG0cSa1xaFSYMWOtEk6ixJLnxR6uqvKDWOyV58+7WsE2pmDPJ89pwunFYJU2VJAQuqxR5H+Jw5Kn8ww9f23xx3UTMaKHGHv8lcep0Bwo3DG8vKImhvFnyDyKX/GyiU/qoM7cfMm4kWUSCRT5wgA468qY9vZTyugDh4l8mocWCiqxxYZwLBlwP+p99b+vWXDzt31SJvQEJs1ub2bbHdAJ0lOmVrTJgV3iJZiFx1ksB9/qyCYEij/nVWPrt88WZyKqauGNxvmwRrEgA5vLV6DS8EnsLptfeHqn+AgqPXTGBDAEePRGTT8usJ7C0ozEuByfxVigHTvoTsPxMn2irjlwt9fTnR/1MUaFHkXwS7p8Bw67eJf8altolcIOZ+FBSCVP8QtHfpRL/lnHioLYDO0g4PH4MxUCqSx6Yvo+w/bmmJqUjcGx00617LdqNAC4zdeangNxfqMeASzlcR57XvEskGnHOchV++kZ+XZRXC5+sXCvD5mlMUCvMaFgzNAaS++alODaexya0iwbfzFEq6zyEo9iXvXcqagG+9a2ZhuhZRu4cMGJaCg8ss2mwPj/bE4Boq/FGBf2QuJ4+s5seqPAo25MPYOF3jnqoO+E4GXhgB"},{"type":"text","text":"{\"resource\":\"venues\",\"filters\":[{\"name\":\"by_city_match\",\"value\":\"Chicago\"},{\"name\":\"by_category\",\"value\":\"hall\"}],\"confidence\":0.5,\"unmapped\":[],\"question\":\"How
+        many guests should the hall fit?\",\"options\":[\"At least 50 guests\",\"At
+        least 100 guests\",\"At least 200 guests\"]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1406,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":283,"output_tokens_details":{"thinking_tokens":169},"service_tier":"standard","inference_geo":"global","speed":"standard"},"input_transformations":[],"diagnostics":null}'
+  recorded_at: Sat, 21 Nov 2026 13:45:24 GMT
 recorded_with: VCR 6.4.1
