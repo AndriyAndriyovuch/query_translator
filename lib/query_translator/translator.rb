@@ -1,18 +1,14 @@
 # frozen_string_literal: true
 
 class QueryTranslator::Translator
-  DEFAULT_MODEL = "claude-sonnet-5-5"
-  MAX_QUERY_LENGTH = 500
-
-  def self.call(query:, resources:, today: Date.today, model: DEFAULT_MODEL)
-    new(query:, resources:, today:, model:).call
+  def self.call(query:, resources:, today: Date.today)
+    new(query:, resources:, today:).call
   end
 
-  def initialize(query:, resources:, today:, model:)
-    @query = query.to_s.strip[0, MAX_QUERY_LENGTH]
+  def initialize(query:, resources:, today:)
+    @query = query.to_s.strip[0, QueryTranslator.config.max_query_length]
     @resources = resources
     @today = today
-    @model = model
   end
 
   def call
@@ -31,7 +27,7 @@ class QueryTranslator::Translator
 
   def chat
     prompt = QueryTranslator::Prompt.new(resources: @resources, today: @today)
-    RubyLLM.chat(model: @model).with_instructions(prompt.instructions).with_schema(prompt.schema)
+    RubyLLM.chat(model: QueryTranslator.config.model).with_instructions(prompt.instructions).with_schema(prompt.schema)
   end
 
   def resource

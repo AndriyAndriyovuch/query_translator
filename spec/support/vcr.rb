@@ -7,7 +7,7 @@ VCR.configure do |config|
   config.cassette_library_dir = File.expand_path("../cassettes", __dir__)
   config.hook_into :webmock
   config.configure_rspec_metadata!
-  config.default_cassette_options = { record: ENV["ANTHROPIC_API_KEY"] ? :once : :none,
+  config.default_cassette_options = { record: ENV["ANTHROPIC_API_KEY"].to_s.strip.empty? ? :none : :once,
                                       match_requests_on: %i[method uri body] }
   config.before_record do |interaction|
     interaction.ignore! unless interaction.response.status.code == 200

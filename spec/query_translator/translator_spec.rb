@@ -3,7 +3,7 @@
 RSpec.describe QueryTranslator::Translator do
   subject(:result) { described_class.call(query:, resources: [venues_resource, bookings_resource]) }
 
-  let(:chat) { RubyLLM.chat(model: described_class::DEFAULT_MODEL) }
+  let(:chat) { RubyLLM.chat(model: QueryTranslator.config.model) }
   let(:query) { "a hall in Chicago" }
 
   before { allow(RubyLLM).to receive(:chat).and_return(chat) }
@@ -20,11 +20,12 @@ RSpec.describe QueryTranslator::Translator do
   context "when the query is too long" do
     let(:query) { "hall " * 200 }
 
-    it "sends only the first 500 characters" do
+    it "sends only as many characters as the configuration allows" do
       allow(chat).to receive(:ask).and_return(model_answer)
 
       result
-      expect(chat).to have_received(:ask).with(a_string_matching(/\A.{500}\z/m))
+      expect(chat).to have_received(:ask)
+        .with(a_string_matching(/\A.{#{QueryTranslator.config.max_query_length}}\z/m))
     end
   end
 

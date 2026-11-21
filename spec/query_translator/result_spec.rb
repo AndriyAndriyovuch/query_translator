@@ -24,6 +24,14 @@ RSpec.describe QueryTranslator::Result do
     end
   end
 
+  context "when the app sets a stricter threshold" do
+    it "is not confident with the same score" do
+      allow(QueryTranslator.config).to receive(:confidence_threshold).and_return(0.95)
+
+      expect(result).to be_low_confidence
+    end
+  end
+
   context "when the model asks a question" do
     it "asks it" do
       expect(result.with(question: "For how many guests?", options: %w[20 50 100])).to be_clarify

@@ -6,7 +6,7 @@ require "query_translator"
 Dir[File.join(__dir__, "support/**/*.rb")].each { |file| require file }
 
 RubyLLM.configure do |config|
-  config.anthropic_api_key = ENV.fetch("ANTHROPIC_API_KEY", "test-key")
+  config.anthropic_api_key = ENV["ANTHROPIC_API_KEY"].to_s.strip.then { |key| key.empty? ? "test-key" : key }
 end
 
 RSpec.configure do |config|

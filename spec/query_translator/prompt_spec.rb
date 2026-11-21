@@ -13,6 +13,14 @@ RSpec.describe QueryTranslator::Prompt do
     end
   end
 
+  describe "#instructions with the app's own rules" do
+    it "adds them after the gem's rules" do
+      allow(QueryTranslator.config).to receive(:extra_instructions).and_return("Prices are per time slot.")
+
+      expect(prompt.instructions).to end_with("More rules from the app:\nPrices are per time slot.\n")
+    end
+  end
+
   describe "#schema" do
     it "lets the model pick only the listed resources and filters" do
       properties = prompt.schema[:properties]

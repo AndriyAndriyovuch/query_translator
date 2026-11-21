@@ -7,6 +7,12 @@ class QueryTranslator::Prompt
   end
 
   def instructions
+    return base_instructions unless extra_instructions
+
+    "#{base_instructions}\nMore rules from the app:\n#{extra_instructions}\n"
+  end
+
+  def base_instructions
     <<~TEXT
       You translate a search request written in plain language into filters for a JSON API.
       Today is #{@today.strftime("%A, %Y-%m-%d")}. Resolve relative dates such as "tomorrow" or "on Saturday" from it.
@@ -16,9 +22,12 @@ class QueryTranslator::Prompt
 
       Rules:
       - Pick the one resource that fits the request and use only its filters.
+      - The request may be in any language: map its words to the filters exactly as you would map English ones.
       - Write every value as a string: integers like "50", decimals like "299.99", dates as YYYY-MM-DD,
         booleans as "true" or "false", enum values exactly as listed.
-      - Put every part of the request that no filter can express into "unmapped", in the user's words.
+      - Put into "unmapped", in the user's words, only the requirements that no filter can express and that would
+        change which results fit, such as "with a sea view". Leave out the purpose of the event (a wedding, a birthday,
+        a party), opinions and filler words ("cool", "chill", "nothing fancy") and words a filter already covers.
       - Ask a question instead of guessing when a word is vague about a number ("big", "cheap"), when a date
         could mean more than one day ("on the weekend"), or when it is unclear which resource the user means.
         Give 2 to 4 short options and write the question and the options in the language of the request.
@@ -38,6 +47,11 @@ class QueryTranslator::Prompt
   end
 
   private
+
+  def extra_instructions
+    text = QueryTranslator.config.extra_instructions.to_s.strip
+    text unless text.empty?
+  end
 
   def answer_properties
     {

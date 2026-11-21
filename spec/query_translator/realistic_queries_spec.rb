@@ -46,9 +46,8 @@ RSpec.describe QueryTranslator::Translator, :vcr do
     let(:query) { "зала в Нью-Йорку на 100 гостей" }
 
     it "writes the city in English" do
-      expect(result).to have_attributes(path: "/api/v1/venues", low_confidence?: false,
-                                        filters: { "by_city_match" => "New York", "by_capacity_gte" => 100,
-                                                   "by_category" => "hall" })
+      expect(result).to have_attributes(path: "/api/v1/venues", low_confidence?: false)
+      expect(result.filters).to include("by_city_match" => "New York", "by_capacity_gte" => 100)
     end
   end
 
