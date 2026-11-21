@@ -53,6 +53,14 @@ RSpec.describe QueryTranslator::FilterCheck do
     end
   end
 
+  context "when a boolean filter is turned off" do
+    let(:filters) { { "with_parking" => "false" } }
+
+    it "does not send it and reports it, because a switch filter can only narrow" do
+      expect(result).to have_attributes(filters: {}, errors: [a_string_including("bad boolean for with_parking")])
+    end
+  end
+
   context "when a filter is made up and a value is bad" do
     let(:filters) { { "by_city_match" => "Chicago", "by_view" => "sea", "available_on" => "next Saturday" } }
 

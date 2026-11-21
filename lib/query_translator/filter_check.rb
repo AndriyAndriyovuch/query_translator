@@ -5,7 +5,7 @@ require "time"
 
 class QueryTranslator::FilterCheck
   Result = Data.define(:filters, :errors)
-  BOOLEANS = { true => true, false => false, "true" => true, "false" => false }.freeze
+  SWITCHED_ON = [true, "true"].freeze
 
   def self.call(resource:, filters:)
     new(resource:, filters:).call
@@ -57,13 +57,17 @@ class QueryTranslator::FilterCheck
     when "integer", "decimal" then cast_number(filter, value)
     when "date" then cast_date(value)
     when "datetime" then cast_datetime(value)
-    when "boolean" then BOOLEANS[value]
+    when "boolean" then cast_boolean(value)
     when "enum" then cast_enum(filter, value)
     end
   end
 
   def cast_string(value)
     value.strip if value.is_a?(String) && !value.strip.empty?
+  end
+
+  def cast_boolean(value)
+    true if SWITCHED_ON.include?(value)
   end
 
   def cast_number(filter, value)

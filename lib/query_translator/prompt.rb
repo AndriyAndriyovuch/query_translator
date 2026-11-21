@@ -30,7 +30,10 @@ class QueryTranslator::Prompt
       - A question that the results of a resource could answer ("how do I ...") is a search: search its key words.
       - The request may be in any language: map its words to the filters exactly as you would map English ones.
       - Write every value as a string: integers like "50", decimals like "299.99", dates as YYYY-MM-DD,
-        datetimes as YYYY-MM-DDThh:mm:ssZ, booleans as "true" or "false", enum values exactly as listed.
+        datetimes as YYYY-MM-DDThh:mm:ssZ, enum values exactly as listed.
+      - A boolean filter can only be switched on: send "true" or leave it out. When the request asks for the
+        opposite of a boolean filter ("without", "not", "never"), express it with another filter if one fits
+        (such as a status), otherwise put that part into "unmapped".
       - Put into "unmapped", in the user's words, only the requirements that no filter can express and that would
         change which results fit, such as "with a sea view". Leave out the purpose of the event (a wedding, a birthday,
         a party), opinions and filler words ("cool", "lit", "nothing fancy"), general or slang words for the thing
