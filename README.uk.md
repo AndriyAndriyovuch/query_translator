@@ -31,7 +31,7 @@
 
 ```ruby
 # Gemfile
-gem 'query_translator', git: 'https://github.com/AndriyAndriyovuch/query_translator.git', branch: 'master'
+gem 'query_translator', '~> 0.1'
 ```
 
 ```bash

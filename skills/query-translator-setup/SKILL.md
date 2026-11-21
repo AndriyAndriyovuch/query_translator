@@ -1,7 +1,7 @@
 ---
 name: query-translator-setup
 description: Add natural-language search to a Rails app with the query_translator gem — free text in any language becomes validated filters for the app's existing index endpoints, with clarification questions and a fallback to the filter UI. Use when asked to "add natural language search", "search in plain words", "let users type what they need", "text to filters", "NL search", "plug in query_translator", or to make an API searchable by a sentence. Reuses the project's own index endpoints and search services and fits any Rails layout.
-version: 1.0.0
+version: 1.1.0
 updated: 2026-11-21
 ---
 
@@ -37,7 +37,7 @@ project's **existing** index endpoints; it never searches by itself. The full ru
 ### 2. Add the gem and read its guide
 
 ```ruby
-gem 'query_translator', git: 'https://github.com/AndriyAndriyovuch/query_translator.git', branch: 'master'
+gem 'query_translator', '~> 0.1'
 ```
 
 Run `bundle install`, then read the whole guide from the installed copy before writing any code:
@@ -134,7 +134,7 @@ hostile text.
 - the live results: how many queries, what works, what still goes wrong;
 - try-out records created and whether they were removed (with the cleanup command), or "none";
 - anything the developer must do: add the key to every deployed environment before deploying (without it every search
-  fails with a 500), review, commit (if the project leaves that to them), switch a `path:` gem source to `git:`, decide
+  fails with a 500), review, commit (if the project leaves that to them), switch a `path:` gem source to the released gem, decide
   on a rate limit if that is still open.
 
 Finish with the guide's hand-over checklist (§10).

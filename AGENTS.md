@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 updated: 2026-11-21
 ---
 
@@ -172,11 +172,10 @@ business object, thin controllers.
 ### Step 1 — Gemfile
 
 ```ruby
-gem 'query_translator', git: 'https://github.com/AndriyAndriyovuch/query_translator.git', branch: 'master'
+gem 'query_translator', '~> 0.1'
 ```
 
-Pin a `ref:` or `tag:` instead of `branch:` when the project needs reproducible builds. Run `bundle install` and
-confirm `Gemfile.lock` has a `GIT` block for the gem. Never commit a `path:` source: CI and servers don't have it.
+Run `bundle install`. Never commit a `path:` source: CI and servers don't have it.
 
 ### Step 2 — key and initializers
 
@@ -504,7 +503,7 @@ For facts that apply to every filter: currency, units, market, time zone convent
 
 ## 10. Hand-over checklist
 
-- [ ] Gem from `git:` (not `path:`) in the Gemfile, lockfile updated.
+- [ ] Gem from rubygems (not `path:`) in the Gemfile, lockfile updated.
 - [ ] Key in the credentials of development and every deployed environment (not test), both initializers present
       (short RubyLLM timeout and retries), model set explicitly.
 - [ ] Every filter name equals a permitted param of its endpoint; enum values come from code.
